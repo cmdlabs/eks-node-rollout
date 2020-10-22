@@ -29,6 +29,7 @@ Usage: eks-node-rollout [OPTIONS]
 
 Options:
   --cluster-name TEXT       Cluster name to discover ASGs from  [required]
+  --drain-timeout TEXT      Timeout for draining worker nodes
   --dry-run / --no-dry-run  Run with read-only API calls
   --debug / --no-debug      Enable debug logging
   --help                    Show this message and exit.

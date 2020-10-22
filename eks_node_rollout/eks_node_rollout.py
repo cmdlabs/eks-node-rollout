@@ -227,9 +227,10 @@ def enable_autoscaling(asg_client, asg_name, dry_run=True):
 
 @click.command()
 @click.option('--cluster-name', envvar='EKS_NODE_ROLLOUT_CLUSTER_NAME', required=True, help="Cluster name to discover ASGs from")
+@click.option('--drain-timeout', envvar='EKS_NODE_ROLLOUT_DRAIN_TIMEOUT', default="120s", help="Timeout for draining worker node (eg. 1s, 2m, 3h)")
 @click.option('--dry-run/--no-dry-run', envvar='EKS_NODE_ROLLOUT_DRY_RUN', default=False, help="Run with read-only API calls")
 @click.option('--debug/--no-debug', envvar='EKS_NODE_ROLLOUT_DEBUG', default=False, help="Enable debug logging")
-def rollout_nodes(cluster_name, dry_run, debug):
+def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
     """Retrieve all outdated workers and perform a rolling update on them."""
 
     if debug:
@@ -286,8 +287,8 @@ def rollout_nodes(cluster_name, dry_run, debug):
                     assert after_instance_count > before_instance_count
 
                 node_name = instance["PrivateDnsName"]
-                logging.info(f'Draining node {node_name} (--dry-run={dry_run})')
-                output = kubectl.drain(node_name, "--force", "--delete-local-data=true", "--ignore-daemonsets=true", "--timeout=120s", f"--dry-run={dry_run}")
+                logging.info(f'Draining node {node_name} (--timeout={drain_timeout} --dry-run={dry_run})')
+                output = kubectl.drain(node_name, "--force", "--delete-local-data=true", "--ignore-daemonsets=true", "--timeout={drain_timeout}", f"--dry-run={dry_run}")
                 print(output.stdout.decode().rstrip())
 
                 terminate_node(asg_client, instance["InstanceId"], dry_run)
