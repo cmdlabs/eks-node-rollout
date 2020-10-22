@@ -227,7 +227,7 @@ def enable_autoscaling(asg_client, asg_name, dry_run=True):
 
 @click.command()
 @click.option('--cluster-name', envvar='EKS_NODE_ROLLOUT_CLUSTER_NAME', required=True, help="Cluster name to discover ASGs from")
-@click.option('--drain-timeout', envvar='EKS_NODE_ROLLOUT_DRAIN_TIMEOUT', default="120s", help="Timeout for draining worker node")
+@click.option('--drain-timeout', envvar='EKS_NODE_ROLLOUT_DRAIN_TIMEOUT', default="120s", help="Timeout for draining worker node (eg. 1s, 2m, 3h)")
 @click.option('--dry-run/--no-dry-run', envvar='EKS_NODE_ROLLOUT_DRY_RUN', default=False, help="Run with read-only API calls")
 @click.option('--debug/--no-debug', envvar='EKS_NODE_ROLLOUT_DEBUG', default=False, help="Enable debug logging")
 def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
