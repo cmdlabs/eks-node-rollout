@@ -131,7 +131,7 @@ def get_latest_instance(asg_client, ec2_client, asg_name, add_time, dry_run=True
     return latest_instance
 
 
-def get_num_of_instances(asg_client, ec2_client, asg_name):
+def get_num_of_instances(asg_client, ec2_client, asg_name, exclude_ids):
     """Returns number of instances in an ASG"""
 
     instances = []
@@ -141,7 +141,7 @@ def get_num_of_instances(asg_client, ec2_client, asg_name):
             asg_name
         ]
     )
-    instance_ids = [instance["InstanceId"] for instance in response["AutoScalingGroups"][0]["Instances"]]
+    instance_ids = [instance["InstanceId"] for instance in response["AutoScalingGroups"][0]["Instances"] if instance["InstanceId"] not in exclude_ids]
     response = ec2_client.describe_instances(InstanceIds=instance_ids)
     for reservation in response["Reservations"]:
         for instance in reservation["Instances"]:
@@ -262,11 +262,12 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
             disable_autoscaling(asg_client=asg_client, asg_name=asg_name, dry_run=dry_run)
 
         try:
+            terminated_ids = []
             for instance in instances:
                 before_instance_count = 0
                 after_instance_count = 0
 
-                before_instance_count = get_num_of_instances(asg_client=asg_client, ec2_client=ec2_client, asg_name=asg_name)
+                before_instance_count = get_num_of_instances(asg_client=asg_client, ec2_client=ec2_client, asg_name=asg_name, exclude_ids=terminated_ids)
                 add_time = datetime.datetime.now(datetime.timezone.utc)
                 add_node(asg_client=asg_client, asg_name=asg_name, dry_run=dry_run)
                 logging.info(f'Waiting for instance to be created...')
@@ -279,7 +280,7 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
                 time.sleep(40)  # instance will never be ready before this, don't bother polling yet
                 wait_for_ready_node(latest_node_name)
                 logging.info(f'Node {latest_node_name} is now "Ready".')
-                after_instance_count = get_num_of_instances(asg_client=asg_client, ec2_client=ec2_client, asg_name=asg_name)
+                after_instance_count = get_num_of_instances(asg_client=asg_client, ec2_client=ec2_client, asg_name=asg_name, exclude_ids=terminated_ids)
 
                 # because get_latest_instance() doesn't necessarily return the instance launched by add_node(), this is just a safety precaution to ensure we've actually launched a node
                 logging.info(f"Had {before_instance_count} instances in {asg_name} before, now have {after_instance_count} instances")
@@ -292,6 +293,7 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
                 print(output.stdout.decode().rstrip())
 
                 terminate_node(asg_client, instance["InstanceId"], dry_run)
+                terminated_ids.append(instance["InstanceId"])
         except Exception:
             logging.critical(f"Failed to upgrade all nodes in {asg_name}.")
             raise
