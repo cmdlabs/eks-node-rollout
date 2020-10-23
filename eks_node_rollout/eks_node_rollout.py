@@ -289,7 +289,7 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
 
                 node_name = instance["PrivateDnsName"]
                 logging.info(f'Draining node {node_name} (--timeout={drain_timeout} --dry-run={dry_run})')
-                output = kubectl.drain(node_name, "--force", "--delete-local-data=true", "--ignore-daemonsets=true", "--timeout={drain_timeout}", f"--dry-run={dry_run}")
+                output = kubectl.drain(node_name, "--force", "--delete-local-data=true", "--ignore-daemonsets=true", f"--timeout={drain_timeout}", f"--dry-run={dry_run}")
                 print(output.stdout.decode().rstrip())
 
                 terminate_node(asg_client, instance["InstanceId"], dry_run)
