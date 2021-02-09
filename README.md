@@ -19,7 +19,8 @@ These are roughly the actions taken by the tool:
   4. Wait for the new instance to be healthy
   5. Drain an instance that is outdated
   6. Terminate the outdated instance
-  7. Repeat until all instances are up to date
+  7. Wait for all pods to be ready in new instance
+  8. Repeat until all instances are up to date
 
 ## Usage
 ```
