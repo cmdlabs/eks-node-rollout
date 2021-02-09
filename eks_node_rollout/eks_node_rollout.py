@@ -177,6 +177,15 @@ def wait_for_ready_node(node_name):
     return
 
 
+def wait_for_ready_pods(node_name):
+    try:
+        kubectl.wait("--for", "condition=Ready", "pods", "--all", "--all-namespaces", "--timeout=300s", "--field-selector", f"spec.nodeName={node_name}")
+    except Exception:
+        logging.critical(f"Pods not ready in {node_name}.")
+        raise
+    return
+
+
 def check_is_cluster_autoscaler_tag_present(asg_client, asg_name):
     """Just added this to make it easier to test really"""
 
@@ -294,6 +303,12 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
 
                 terminate_node(asg_client, instance["InstanceId"], dry_run)
                 terminated_ids.append(instance["InstanceId"])
+
+                # ensure all pods started in new node are ready before we drain next node
+                logging.info(f'Waiting all pods for node {latest_node_name} to be "Ready"...')
+                wait_for_ready_pods(latest_node_name)
+                logging.info(f'All pods in node {latest_node_name} are now "Ready".')                
+
         except Exception:
             logging.critical(f"Failed to upgrade all nodes in {asg_name}.")
             raise
