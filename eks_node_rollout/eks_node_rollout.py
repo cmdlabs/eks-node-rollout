@@ -177,11 +177,11 @@ def wait_for_ready_node(node_name):
     return
 
 
-def wait_for_ready_pods(node_name):
+def wait_for_ready_pods():
     try:
-        kubectl.wait("--for", "condition=Ready", "pods", "--all", "--all-namespaces", "--timeout=300s", "--field-selector", f"spec.nodeName={node_name}")
+        kubectl.wait("--for", "condition=Ready", "pods", "--all", "--all-namespaces", "--timeout=300s")
     except Exception:
-        logging.critical(f"Pods not ready in {node_name}.")
+        logging.critical(f"Pods still not ready after 300s.")
         raise
     return
 
@@ -305,9 +305,9 @@ def rollout_nodes(cluster_name, drain_timeout, dry_run, debug):
                 terminated_ids.append(instance["InstanceId"])
 
                 # ensure all pods started in new node are ready before we drain next node
-                logging.info(f'Waiting all pods for node {latest_node_name} to be "Ready"...')
-                wait_for_ready_pods(latest_node_name)
-                logging.info(f'All pods in node {latest_node_name} are now "Ready".')                
+                logging.info(f'Waiting all pods to be "Ready"...')
+                wait_for_ready_pods()
+                logging.info(f'All pods are now "Ready".')            
 
         except Exception:
             logging.critical(f"Failed to upgrade all nodes in {asg_name}.")
